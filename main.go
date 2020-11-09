@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -84,7 +86,7 @@ func search(response http.ResponseWriter, request *http.Request) {
 	var article Article
 	collection := client.Database("inshorts").Collection("news")
 	fmt.Println(query)
-	err = collection.FindOne(ctx, Article{ID: query}).Decode(&article)
+	err = collection.FindOne(ctx, Article{Title: query, Subtitle: query, Content: query}).Decode(&article)
 	if err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
 		response.Write([]byte(`{ "message": "` + err.Error() + `" }`))
@@ -95,13 +97,38 @@ func search(response http.ResponseWriter, request *http.Request) {
 
 func getArticle(response http.ResponseWriter, request *http.Request) {
 	fmt.Fprintf(response, "Welcome to the getArticle page!")
+
+	var param1, param2 = getCode(request, 267)
+
+	fmt.Println("feshgfuheguhe")
+	fmt.Println(param1)
+	fmt.Println(param2)
+}
+
+func getCode(r *http.Request, defaultCode int) (int, string) {
+	p := strings.Split(r.URL.Path, "/")
+	fmt.Println(p[1])
+	if len(p) == 1 {
+		return defaultCode, p[0]
+	} else if len(p) > 1 {
+		code, err := strconv.Atoi(p[0])
+		if err == nil {
+			return code, p[1]
+		} else {
+			return defaultCode, p[1]
+		}
+	} else {
+		return defaultCode, ""
+	}
 }
 
 func handleRequests() {
+
 	http.HandleFunc("/", homePage)
 	http.HandleFunc("/articles", articles)
 	http.HandleFunc("/articles/search", search)
-	http.HandleFunc("/article/{id}", getArticle)
+	http.HandleFunc("/articles/{id}", getArticle)
+
 	http.ListenAndServe(":12345", nil)
 }
 
